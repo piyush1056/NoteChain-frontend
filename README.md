@@ -1,9 +1,9 @@
 🚀 Solana Note-Taking dApp (Frontend)
 
-CodeClimb Notes is a decentralized, CRUD-based note-taking application built on the Solana Blockchain. It leverages PDAs (Program Derived Addresses) to ensure secure, user-specific data storage with a high-performance Next.js interface.
+NoteChain is a decentralized, CRUD-based note-taking application built on the Solana Blockchain. It leverages PDAs (Program Derived Addresses) to ensure secure, user-specific data storage with a high-performance Next.js interface.
 
 🌟 Key Technical Features
-🔐 Seamless Web3 Auth: Integrated Solana Wallet Adapter for secure connection with Phantom and Solflare, managing real-time session states.
+🔐 Seamless Web3 Auth: Integrated Solana Wallet Adapter fr secure connection with Phantom and Solflare, managing real-time session states.
 
 👤 On-Chain User Profiles: Implemented PDA-based profile creation, ensuring each user has a unique, verifiable identity stored directly on the Solana Devnet.
 
