@@ -17,6 +17,7 @@ export const CreateNote: FC<Props> = ({ onNoteCreated }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
 
     if (!title.trim()) {
       toast.error("Please enter a title");
@@ -28,16 +29,39 @@ export const CreateNote: FC<Props> = ({ onNoteCreated }) => {
       return;
     }
 
-    setLoading(true);
+ try {
+      setLoading(true);
 
-    try {
-      const tx = await createNote(title, content);
+      // 1. send text to ipfs route to upload content to IPFS and get back the IPFS hash (CID)
+
+      toast.loading("Uploading to IPFS...", { id: "ipfs-toast" });
+      const ipfsRes = await fetch("/api/ipfs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }), 
+      });
+
+      if (!ipfsRes.ok) {
+        throw new Error("Failed to upload to IPFS");
+      }
+
+      const ipfsData = await ipfsRes.json();
+      toast.success("Secured on IPFS! Now saving to Solana...", { id: "ipfs-toast" });
+
+      // 2:save short url of IPFS on solana
+      // send url of IPFS  instead of content 
+      const tx = await createNote(title, ipfsData.ipfsUrl); 
+      
       toast.success(`Note created! TX: ${tx.slice(0, 8)}...`);
       setTitle("");
       setContent("");
-      onNoteCreated();
+      
+      setTimeout(() => {
+        onNoteCreated(); 
+      }, 2000);
+
     } catch (error: any) {
-      console.error("Error creating note:", error);
+      console.error(error);
       toast.error(error.message || "Failed to create note");
     } finally {
       setLoading(false);
@@ -76,15 +100,11 @@ export const CreateNote: FC<Props> = ({ onNoteCreated }) => {
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            maxLength={MAX_CONTENT_LENGTH}
             rows={5}
             className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-            placeholder="Write your note here..."
+            placeholder="Write your limitless note here..."
             disabled={loading}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            {content.length}/{MAX_CONTENT_LENGTH} characters
-          </p>
         </div>
 
         <button

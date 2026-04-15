@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #121212;
+  --foreground: #f4f4f0;
 }
 
 body {
@@ -15,9 +15,12 @@ body {
 
 /* Solana Wallet Adapter Styles Override */
 .wallet-adapter-button {
-  background-color: #512da8 !important;
+  background-color: #D4AF37 !important; /* Classic Gold */
+  color: #121212 !important; /* Black text on Gold looks premium */
+  transition: all 0.3s ease !important;
 }
 
 .wallet-adapter-button:hover {
-  background-color: #7c4dff !important;
+  background-color: #B5952F !important; /* Darker Gold on hover */
+  transform: translateY(-1px) !important; 
 }

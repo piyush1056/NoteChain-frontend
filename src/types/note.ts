@@ -17,3 +17,7 @@ export interface Note {
 export interface NoteWithPubkey extends Note {
   publicKey: PublicKey;
 }
+export interface SharedAccess {
+  friend: PublicKey;
+  notePda: PublicKey;
+}

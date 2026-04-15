@@ -9,6 +9,7 @@ import {
   PROGRAM_ID,
   USER_PROFILE_SEED,
   NOTE_SEED,
+  SHARE_SEED,
 } from "@/utils/constants";
 import { UserProfile, Note, NoteWithPubkey } from "@/types/note";
 
@@ -16,6 +17,12 @@ export const useNoteProgram = () => {
   const { connection } = useConnection();
   const wallet = useWallet();
 
+const checkRateLimit = async () => {
+    const res = await fetch("/api/check-limit", { method: "POST" });
+    if (!res.ok) {
+      throw new Error("Rate limit exceeded! Please wait a minute before creating/sharing more notes.");
+    }
+  };
 
   const provider = useMemo(() => {
     if (!wallet.publicKey) return null;
@@ -60,8 +67,7 @@ export const useNoteProgram = () => {
   // Derive Note PDA
   const getNotePDA = useCallback(
     (userPubkey: PublicKey, noteId: number) => {
-      const noteIdBuffer = Buffer.alloc(8);
-      noteIdBuffer.writeBigUInt64LE(BigInt(noteId));
+      const noteIdBuffer = new BN(noteId).toArrayLike(Buffer, "le", 8);
 
       return PublicKey.findProgramAddressSync(
         [Buffer.from(NOTE_SEED), userPubkey.toBuffer(), noteIdBuffer],
@@ -76,7 +82,7 @@ export const useNoteProgram = () => {
       if (!program || !wallet.publicKey) {
         throw new Error("Wallet not connected");
       }
-
+       await checkRateLimit(); // Check rate limit before creating user
       const [userProfilePDA] = getUserProfilePDA(wallet.publicKey);
 
       const tx = await program.methods
@@ -115,6 +121,7 @@ export const useNoteProgram = () => {
       const [userProfilePDA] = getUserProfilePDA(wallet.publicKey);
       const userProfile = await program.account.userProfile.fetch(userProfilePDA);
       const nextNoteId = (userProfile.noteCount as BN).toNumber() + 1;
+      await checkRateLimit(); // Check rate limit before creating note
 
       const [notePDA] = getNotePDA(wallet.publicKey, nextNoteId);
 
@@ -170,7 +177,7 @@ export const useNoteProgram = () => {
       if (!program || !wallet.publicKey) {
         throw new Error("Wallet not connected");
       }
-
+        await checkRateLimit();
       const [notePDA] = getNotePDA(wallet.publicKey, noteId);
 
       const tx = await program.methods
@@ -186,13 +193,98 @@ export const useNoteProgram = () => {
     },
     [program, wallet.publicKey, getNotePDA]
   );
+  const shareNote = useCallback(
+    async (noteId: number, friendPublicKeyStr: string) => {
+      if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
 
+      const friendPubKey = new PublicKey(friendPublicKeyStr);
+      await checkRateLimit(); 
+      // exising Note PDA
+      const [notePDA] = getNotePDA(wallet.publicKey, noteId); 
+
+      // derive shared access PDA
+      const [sharedAccessPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from(SHARE_SEED), notePDA.toBuffer(), friendPubKey.toBuffer()],
+        program.programId
+      );
+
+      const tx = await program.methods
+        .shareNote(friendPubKey)
+        .accounts({
+          signer: wallet.publicKey,
+          note: notePDA,
+          sharedAccess: sharedAccessPDA,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      return tx;
+    },
+    [program, wallet.publicKey, getNotePDA]
+  );
+  const updateSharedNote = useCallback(
+    async (notePdaStr: string, newContent: string) => {
+      if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+      
+      await checkRateLimit();
+      const notePDA = new PublicKey(notePdaStr);
+
+      // Derive shared access PDA for the current user and the note
+      const [sharedAccessPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from(SHARE_SEED), notePDA.toBuffer(), wallet.publicKey.toBuffer()],
+        program.programId
+      );
+
+      const tx = await program.methods
+        .updateSharedNote(newContent)
+        .accounts({
+          signer: wallet.publicKey, 
+          note: notePDA,
+          sharedAccess: sharedAccessPDA,
+        })
+        .rpc();
+
+      return tx;
+    },
+    [program, wallet.publicKey]
+  );
+  const fetchSharedNotes = useCallback(async () => {
+    if (!program || !wallet.publicKey) return [];
+
+    try {
+      // 1. find all shared access accounts where friend is the current user
+      const sharedAccounts = await program.account.sharedAccess.all([
+        {
+          memcmp: {
+            offset: 8, 
+            bytes: wallet.publicKey.toBase58(),
+          },
+        },
+      ]);
+
+      // 2. for each shared access, fetch the corresponding note data
+      const notes = await Promise.all(
+        sharedAccounts.map(async (acc) => {
+          const noteData = await program.account.note.fetch(acc.account.notePda);
+          return {
+            ...noteData,
+            publicKey: acc.account.notePda,
+          };
+        })
+      );
+
+      return notes;
+    } catch (error) {
+      console.error("Error fetching shared notes:", error);
+      return [];
+    }
+  }, [program, wallet.publicKey]);
   const deleteNote = useCallback(
     async (noteId: number) => {
       if (!program || !wallet.publicKey) {
         throw new Error("Wallet not connected");
       }
-
+      await checkRateLimit();
       const [notePDA] = getNotePDA(wallet.publicKey, noteId);
 
       const tx = await program.methods
@@ -217,6 +309,9 @@ export const useNoteProgram = () => {
     getUserNotes,
     updateNote,
     deleteNote,
+    shareNote,
+    updateSharedNote,
+    fetchSharedNotes, 
     connected: wallet.connected,
     publicKey: wallet.publicKey,
   };

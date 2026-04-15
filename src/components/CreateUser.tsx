@@ -32,7 +32,12 @@ export const CreateUser: FC<Props> = ({ onUserCreated }) => {
     try {
       const tx = await createUser(username);
       toast.success(`Profile created! TX: ${tx.slice(0, 8)}...`);
-      onUserCreated();
+      // to sync with blockchain after creating user, wait for a short time before calling onUserCreated
+       setTimeout(() => {
+        onUserCreated(); 
+      }, 2000); 
+     
+
     } catch (error: any) {
       console.error("Error creating user:", error);
       toast.error(error.message || "Failed to create profile");

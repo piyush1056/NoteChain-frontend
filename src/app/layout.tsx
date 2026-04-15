@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Solana Note App",
+  title: "Solana Note-Chain",
   description: "Decentralized note-taking on Solana blockchain",
 };
 

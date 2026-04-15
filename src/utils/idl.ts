@@ -1,6 +1,6 @@
 
 
-export const IDL = {
+export const IDL ={
   "address": "G48CMVhqv9r9qpbg9zbFwWj1LSe9d5jnRRvE6rzfNNZS",
   "metadata": {
     "name": "note_app",
@@ -11,9 +11,6 @@ export const IDL = {
   "instructions": [
     {
       "name": "create_note",
-      "docs": [
-        "Creates a new note for a user"
-      ],
       "discriminator": [
         103,
         2,
@@ -87,9 +84,6 @@ export const IDL = {
     },
     {
       "name": "create_user",
-      "docs": [
-        "Creates a new user profile"
-      ],
       "discriminator": [
         108,
         227,
@@ -208,10 +202,67 @@ export const IDL = {
       ]
     },
     {
-      "name": "update_note",
-      "docs": [
-        "Updates an existing note's content"
+      "name": "share_note",
+      "discriminator": [
+        133,
+        20,
+        255,
+        39,
+        159,
+        235,
+        185,
+        37
       ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "note",
+          "writable": true
+        },
+        {
+          "name": "shared_access",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "note"
+              },
+              {
+                "kind": "arg",
+                "path": "friend"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "friend",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "update_note",
       "discriminator": [
         103,
         129,
@@ -270,6 +321,61 @@ export const IDL = {
           "type": "string"
         }
       ]
+    },
+    {
+      "name": "update_shared_note",
+      "discriminator": [
+        65,
+        85,
+        124,
+        179,
+        222,
+        20,
+        39,
+        94
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "note",
+          "writable": true
+        },
+        {
+          "name": "shared_access",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "note"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_content",
+          "type": "string"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -284,6 +390,19 @@ export const IDL = {
         210,
         122,
         126
+      ]
+    },
+    {
+      "name": "SharedAccess",
+      "discriminator": [
+        133,
+        221,
+        251,
+        154,
+        37,
+        64,
+        34,
+        178
       ]
     },
     {
@@ -333,6 +452,22 @@ export const IDL = {
       }
     },
     {
+      "name": "SharedAccess",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "friend",
+            "type": "pubkey"
+          },
+          {
+            "name": "note_pda",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "UserProfile",
       "type": {
         "kind": "struct",
@@ -354,5 +489,4 @@ export const IDL = {
     }
   ]
 }
-
 export type NoteAppIDL = typeof IDL;

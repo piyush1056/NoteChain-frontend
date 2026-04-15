@@ -1,3 +1,4 @@
+"use client";
 import dynamic from "next/dynamic";
 
 // Disable SSR entirely for the Dashboard component

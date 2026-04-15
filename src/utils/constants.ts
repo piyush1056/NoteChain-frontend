@@ -9,6 +9,7 @@ export const NETWORK = clusterApiUrl("devnet");
 
 export const USER_PROFILE_SEED = "user_profile";
 export const NOTE_SEED = "note";
+export const SHARE_SEED = "share";
 
 
 export const MAX_USERNAME_LENGTH = 50;
